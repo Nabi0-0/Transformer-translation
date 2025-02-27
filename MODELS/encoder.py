@@ -1,30 +1,17 @@
-#encoder block
-
-import torch
 import torch.nn as nn
 from models.multi_head_attention import MultiHeadAttention
-from models.residual_layer_norm import ResidualConnection
+from models.feed_forward import FeedForward
 
-class FeedForward(nn.Module):
-    def __init__(self, d_model, d_ff, dropout=0.1):
-        super(FeedForward, self).__init__()
-        self.fc1 = nn.Linear(d_model, d_ff)
-        self.fc2 = nn.Linear(d_ff, d_model)
-        self.dropout = nn.Dropout(dropout)
-        self.relu = nn.ReLU()
-
-    def forward(self, x):
-        return self.fc2(self.dropout(self.relu(self.fc1(x))))
-
-class EncoderBlock(nn.Module):
+class EncoderLayer(nn.Module):
     def __init__(self, d_model, num_heads, d_ff, dropout=0.1):
-        super(EncoderBlock, self).__init__()
-        self.attention = MultiHeadAttention(d_model, num_heads)
-        self.residual1 = ResidualConnection(d_model, dropout)
-        self.feed_forward = FeedForward(d_model, d_ff, dropout)
-        self.residual2 = ResidualConnection(d_model, dropout)
+        super(EncoderLayer, self).__init__()
+        self.self_attn = MultiHeadAttention(d_model, num_heads)
+        self.ffn = FeedForward(d_model, d_ff)
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+        self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x, mask=None):
-        x = self.residual1(x, lambda x: self.attention(x, x, x, mask))
-        x = self.residual2(x, self.feed_forward)
+    def forward(self, x, mask):
+        x = x + self.dropout(self.self_attn(self.norm1(x), self.norm1(x), self.norm1(x), mask))
+        x = x + self.dropout(self.ffn(self.norm2(x)))
         return x

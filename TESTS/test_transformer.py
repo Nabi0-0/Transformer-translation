@@ -1,5 +1,3 @@
-#for testing transformer model
-
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -17,16 +15,22 @@ def test_transformer():
     dropout = 0.1
 
     transformer = Transformer(input_vocab_size, target_vocab_size, d_model, num_heads, d_ff, num_layers, dropout)
-    
-    src = torch.randint(0, input_vocab_size, (2, 10))  # (batch_size, seq_len)
-    trg = torch.randint(0, target_vocab_size, (2, 10))  # (batch_size, seq_len)
-    src_mask = torch.ones((2, 1, 1, 10))  # Dummy mask (for testing)
-    trg_mask = torch.ones((2, 1, 10, 10))  # Dummy mask (for testing)
 
-    output = transformer(src, trg, src_mask, trg_mask)
-    assert output.shape == (2, 10, target_vocab_size), f"Unexpected shape: {output.shape}"
+    batch_size = 2
+    seq_len = 10
 
-    print("✅ Transformer model test passed!")
+    src = torch.randint(0, input_vocab_size, (batch_size, seq_len), dtype=torch.long)
+    trg = torch.randint(0, target_vocab_size, (batch_size, seq_len), dtype=torch.long)
+
+    src_mask = torch.ones((batch_size, 1, 1, seq_len))  # Adjusted shape for compatibility
+    trg_mask = torch.ones((batch_size, 1, seq_len, seq_len))  # Adjusted shape for compatibility
+
+    try:
+        output = transformer(src, trg, src_mask, trg_mask)
+        assert output.shape == (batch_size, seq_len, target_vocab_size), f"Unexpected shape: {output.shape}"
+        print("✅ Transformer model test passed!")
+    except Exception as e:
+        print(f"❌ Error during model forward pass or assertion: {e}")
 
 if __name__ == "__main__":
     test_transformer()

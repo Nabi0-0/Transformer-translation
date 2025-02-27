@@ -3,52 +3,34 @@
 import torch
 import torch.nn as nn
 import math
+import torch.nn.functional as F
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, d_model, num_heads, dropout=0.1):
+    def __init__(self, d_model, num_heads):
         super(MultiHeadAttention, self).__init__()
-        
         assert d_model % num_heads == 0, "d_model must be divisible by num_heads"
-
-        self.d_model = d_model
+        
         self.num_heads = num_heads
-        self.head_dim = d_model // num_heads  # Dimension of each head
+        self.d_k = d_model // num_heads
 
-        # Linear transformations for Q, K, V
-        self.W_q = nn.Linear(d_model, d_model, bias=False)
-        self.W_k = nn.Linear(d_model, d_model, bias=False)
-        self.W_v = nn.Linear(d_model, d_model, bias=False)
-        self.W_out = nn.Linear(d_model, d_model, bias=False)
+        self.W_q = nn.Linear(d_model, d_model)
+        self.W_k = nn.Linear(d_model, d_model)
+        self.W_v = nn.Linear(d_model, d_model)
+        self.W_o = nn.Linear(d_model, d_model)
 
-        self.dropout = nn.Dropout(dropout)
-        self.scale = math.sqrt(self.head_dim)  # Scaling factor
+    def forward(self, q, k, v, mask=None):
+        batch_size = q.shape[0]
 
-    def forward(self, queries, keys, values, mask=None):
-        batch_size = queries.shape[0]
+        q = self.W_q(q).view(batch_size, -1, self.num_heads, self.d_k).transpose(1, 2)
+        k = self.W_k(k).view(batch_size, -1, self.num_heads, self.d_k).transpose(1, 2)
+        v = self.W_v(v).view(batch_size, -1, self.num_heads, self.d_k).transpose(1, 2)
 
-        # Apply linear transformations
-        Q = self.W_q(queries)  # (batch_size, seq_len, d_model)
-        K = self.W_k(keys)
-        V = self.W_v(values)
-
-        # Split into multiple heads and reshape
-        Q = Q.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
-        K = K.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
-        V = V.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
-
-        # Scaled Dot-Product Attention
-        scores = torch.matmul(Q, K.transpose(-2, -1)) / self.scale
-
+        scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.d_k)
         if mask is not None:
-            scores = scores.masked_fill(mask == 0, float('-inf'))
+            scores = scores.masked_fill(mask == 0, -1e9)
 
-        attention_weights = torch.softmax(scores, dim=-1)
-        attention_weights = self.dropout(attention_weights)
+        attn = F.softmax(scores, dim=-1)
+        output = torch.matmul(attn, v)
 
-        output = torch.matmul(attention_weights, V)  # (batch_size, num_heads, seq_len, head_dim)
-
-        # Concatenate heads and pass through final linear layer
-        output = output.transpose(1, 2).contiguous().view(batch_size, -1, self.d_model)
-        output = self.W_out(output)
-
-        return output #,attention_weights
+        output = output.transpose(1, 2).contiguous().view(batch_size, -1, self.num_heads * self.d_k)
+        return self.W_o(output)
