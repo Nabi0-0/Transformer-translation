@@ -1,5 +1,10 @@
 #for testing layer normalization and residual connection
 
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+
 import torch
 from models.residual_layer_norm import LayerNorm, ResidualConnection
 
