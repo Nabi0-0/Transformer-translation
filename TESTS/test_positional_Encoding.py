@@ -1,6 +1,7 @@
 #for testing postional encoding
 
 import torch
+import MODELS
 from positional_encoding import PositionalEncoding
 
 #define model size and sequence length
