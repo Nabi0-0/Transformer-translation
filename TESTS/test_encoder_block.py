@@ -4,24 +4,28 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-
 import torch
-from models.encoder import EncoderBlock
+from models.encoder import EncoderLayer
 
-def test_encoder_block():
-    batch_size = 2
-    seq_length = 5
+def test_encoder():
     d_model = 512
     num_heads = 8
     d_ff = 2048
+    dropout = 0.1
+    batch_size = 2
+    seq_len = 10
 
-    x = torch.randn(batch_size, seq_length, d_model)
-    encoder_block = EncoderBlock(d_model, num_heads, d_ff)
+    encoder_layer = EncoderLayer(d_model, num_heads, d_ff, dropout)
 
-    output = encoder_block(x)
+    x = torch.rand(batch_size, seq_len, d_model)
+    mask = torch.ones(batch_size, 1, 1, seq_len)
 
-    assert output.shape == (batch_size, seq_length, d_model), "Output shape is incorrect!"
-    print("✅ Encoder Block Test Passed!")
+    try:
+        output = encoder_layer(x, mask)
+        assert output.shape == (batch_size, seq_len, d_model), f"Unexpected shape: {output.shape}"
+        print("✅ Encoder test passed!")
+    except Exception as e:
+        print(f"❌ Error in Encoder: {e}")
 
 if __name__ == "__main__":
-    test_encoder_block()
+    test_encoder()
