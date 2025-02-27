@@ -10,10 +10,11 @@ from models.feed_forward import FeedForward
 def test_feedforward():
     batch_size = 2
     seq_length = 5
+    dropout = 0.1 
     d_model = 512
     d_ff = 2048  # Hidden layer size
 
-    ffn = FeedForward(d_model, d_ff)
+    ffn = FeedForward(d_model, d_ff, dropout)
     
     x = torch.randn(batch_size, seq_length, d_model)
     output = ffn(x)

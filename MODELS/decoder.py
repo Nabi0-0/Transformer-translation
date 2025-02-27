@@ -11,7 +11,7 @@ class DecoderBlock(nn.Module):
         super().__init__()
         self.masked_attention = MultiHeadAttention(d_model, num_heads)
         self.attention = MultiHeadAttention(d_model, num_heads)
-        self.feed_forward = FeedForward(d_model, d_ff)
+        self.feed_forward = FeedForward(d_model, d_ff, dropout)
         
         self.residual1 = ResidualConnection(d_model, dropout)
         self.residual2 = ResidualConnection(d_model, dropout)
