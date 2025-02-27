@@ -1,5 +1,6 @@
 {
     "python.analysis.extraPaths": [
         "./MODELS"
-    ]
+    ],
+    "python.analysis.typeCheckingMode": "standard"
 }
